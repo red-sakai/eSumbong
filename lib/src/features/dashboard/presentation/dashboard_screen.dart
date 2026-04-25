@@ -81,7 +81,7 @@ class _DashboardHomeTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final casesAsync = ref.watch(casesStreamProvider);
+    final casesAsync = ref.watch(visibleCasesStreamProvider);
     final theme = Theme.of(context);
 
     return casesAsync.when(
@@ -196,7 +196,7 @@ class _CaseListTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final casesAsync = ref.watch(casesStreamProvider);
+    final casesAsync = ref.watch(visibleCasesStreamProvider);
 
     return casesAsync.when(
       data: (cases) => ListView.builder(

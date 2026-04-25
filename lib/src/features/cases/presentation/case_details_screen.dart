@@ -56,6 +56,16 @@ class CaseDetailsScreen extends ConsumerWidget {
                           ? 'CFA: Generated'
                           : 'CFA: Not generated',
                     ),
+                    if (caseData.cfaRecord != null) ...<Widget>[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Certificate No.: ${caseData.cfaRecord!.certificateNumber}',
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Issued: ${DateFormat.yMMMMd().add_jm().format(caseData.cfaRecord!.issuedAt)}',
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -98,9 +108,22 @@ class CaseDetailsScreen extends ConsumerWidget {
                     },
                     child: const Text('Generate CFA'),
                   ),
+                  if (caseData.cfaRecord != null)
+                    OutlinedButton(
+                      onPressed: () => context.push('/cfa/${caseData.id}'),
+                      child: const Text('View CFA'),
+                    ),
                   TextButton(
-                    onPressed: () =>
-                        context.push('/qr-verify?caseId=${caseData.id}'),
+                    onPressed: () {
+                      final payload = caseData.cfaRecord?.qrPayload;
+                      if (payload == null) {
+                        context.push('/qr-verify');
+                        return;
+                      }
+                      context.push(
+                        '/qr-verify?payload=${Uri.encodeComponent(payload)}',
+                      );
+                    },
                     child: const Text('QR Verify'),
                   ),
                 ],

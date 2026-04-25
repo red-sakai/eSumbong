@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/presentation/auth_controller.dart';
 import '../data/case_providers.dart';
 import '../domain/case_event.dart';
 import '../domain/case_status.dart';
@@ -11,7 +12,8 @@ class FileComplaintScreen extends ConsumerStatefulWidget {
   const FileComplaintScreen({super.key});
 
   @override
-  ConsumerState<FileComplaintScreen> createState() => _FileComplaintScreenState();
+  ConsumerState<FileComplaintScreen> createState() =>
+      _FileComplaintScreenState();
 }
 
 class _FileComplaintScreenState extends ConsumerState<FileComplaintScreen> {
@@ -42,9 +44,11 @@ class _FileComplaintScreenState extends ConsumerState<FileComplaintScreen> {
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
+    final currentUser = ref.read(authControllerProvider);
 
     final complaintCase = ComplaintCase(
       id: caseId,
+      createdByUserId: currentUser?.id ?? 'anonymous-user',
       complainantName: _complainantController.text.trim(),
       respondentName: _respondentController.text.trim(),
       description: _descriptionController.text.trim(),
@@ -99,7 +103,9 @@ class _FileComplaintScreenState extends ConsumerState<FileComplaintScreen> {
               controller: _descriptionController,
               minLines: 3,
               maxLines: 5,
-              decoration: const InputDecoration(labelText: 'Incident Description'),
+              decoration: const InputDecoration(
+                labelText: 'Incident Description',
+              ),
               validator: (value) =>
                   value == null || value.isEmpty ? 'Required field' : null,
             ),
