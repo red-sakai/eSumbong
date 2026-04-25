@@ -81,3 +81,11 @@ final caseByIdProvider = StreamProvider.family<ComplaintCase?, String>((
     return null;
   });
 });
+
+/// Total number of case-event notifications visible to the current user.
+/// Mirrors what [NotificationsScreen] shows so the badge is always in sync.
+final notificationCountProvider = Provider<int>((ref) {
+  final cases = ref.watch(visibleCasesStreamProvider).valueOrNull;
+  if (cases == null) return 0;
+  return cases.fold<int>(0, (sum, c) => sum + c.events.length);
+});
