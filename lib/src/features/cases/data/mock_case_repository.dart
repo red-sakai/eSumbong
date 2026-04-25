@@ -23,7 +23,7 @@ class MockCaseRepository implements CaseRepository {
         events: <CaseEvent>[
           CaseEvent(
             title: 'Case Filed',
-            description: 'Complaint submitted through e-Lupon app.',
+            description: 'Complaint submitted through eSumbong app.',
             timestamp: DateTime.now().subtract(const Duration(days: 9)),
           ),
           CaseEvent(

@@ -44,15 +44,21 @@ class AdminPanelScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        item.id,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        'Case No. ${item.id}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 8),
                       StatusChip(status: item.status),
-                      const SizedBox(height: 8),
-                      Text('Complainant: ${item.complainantName}'),
-                      const SizedBox(height: 4),
-                      Text('Respondent: ${item.respondentName}'),
                     ],
                   ),
                 ),

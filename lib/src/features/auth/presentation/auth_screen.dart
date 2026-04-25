@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,34 +14,114 @@ class AuthScreen extends ConsumerStatefulWidget {
 }
 
 class _AuthScreenState extends ConsumerState<AuthScreen> {
-  final _identityController = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _otpCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _fullNameCtrl = TextEditingController();
+
   bool _usePhoneOtp = true;
+  bool _otpSent = false;
+  bool _obscurePassword = true;
+  UserRole _role = UserRole.citizen;
 
   @override
   void dispose() {
-    _identityController.dispose();
+    _phoneCtrl.dispose();
+    _otpCtrl.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    _fullNameCtrl.dispose();
     super.dispose();
   }
 
-  void _login(UserRole role) {
-    final identity = _identityController.text.trim();
-    if (identity.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter phone number or email first.')),
-      );
+  // ── Phone OTP helpers ───────────────────────────────────────────────────
+
+  Future<void> _sendOtp() async {
+    final phone = _phoneCtrl.text.trim();
+    if (phone.isEmpty) {
+      _snack('Enter your phone number first.');
       return;
     }
-
-    ref
-        .read(authControllerProvider.notifier)
-        .signIn(identity: identity, role: role, usePhoneOtp: _usePhoneOtp);
-
-    context.go('/dashboard');
+    await ref.read(authControllerProvider.notifier).sendMockOtp(phone);
+    if (!mounted) return;
+    final authState = ref.read(authControllerProvider);
+    if (authState is AsyncError) {
+      _snack(authState.error.toString());
+      return;
+    }
+    setState(() => _otpSent = true);
   }
+
+  Future<void> _verifyOtp() async {
+    final name = _fullNameCtrl.text.trim();
+    if (name.isEmpty) { _snack('Enter your full name.'); return; }
+    await ref.read(authControllerProvider.notifier).verifyMockOtp(
+          phone: _phoneCtrl.text.trim(),
+          code: _otpCtrl.text.trim(),
+          role: _role,
+          fullName: name,
+        );
+    if (!mounted) return;
+    final authState = ref.read(authControllerProvider);
+    if (authState is AsyncError) {
+      _snack(authState.error.toString());
+    } else if (authState is AsyncData) {
+      context.go('/dashboard');
+    }
+  }
+
+  // ── Email helpers ────────────────────────────────────────────────────────
+
+  Future<void> _signInWithEmail() async {
+    final email = _emailCtrl.text.trim();
+    final pass = _passwordCtrl.text;
+    final name = _fullNameCtrl.text.trim();
+    if (email.isEmpty || pass.isEmpty) {
+      _snack('Enter email and password.');
+      return;
+    }
+    await ref.read(authControllerProvider.notifier).signInWithEmail(
+          email: email,
+          password: pass,
+          role: _role,
+          fullName: name,
+        );
+    if (!mounted) return;
+    final authState = ref.read(authControllerProvider);
+    if (authState is AsyncError) {
+      _snack(_friendlyError(authState.error));
+    } else if (authState is AsyncData) {
+      context.go('/dashboard');
+    }
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  void _snack(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  String _friendlyError(Object? e) {
+    final msg = e.toString();
+    if (msg.contains('wrong-password') || msg.contains('invalid-credential')) {
+      return 'Incorrect password. Try again.';
+    }
+    if (msg.contains('invalid-email')) return 'Invalid email address.';
+    if (msg.contains('weak-password')) {
+      return 'Password must be at least 6 characters.';
+    }
+    return msg;
+  }
+
+  // ── Build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final authState = ref.watch(authControllerProvider);
+    final isLoading = authState is AsyncLoading;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Sign In')),
@@ -61,20 +142,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
+                    // ── Header card ───────────────────────────────────────
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(24),
                         gradient: const LinearGradient(
-                          colors: <Color>[Color(0xFF0F766E), Color(0xFF155E75)],
+                          colors: <Color>[
+                            Color(0xFF0F766E),
+                            Color(0xFF155E75),
+                          ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         boxShadow: <BoxShadow>[
                           BoxShadow(
-                            color: const Color(
-                              0xFF0F766E,
-                            ).withValues(alpha: 0.18),
+                            color:
+                                const Color(0xFF0F766E).withValues(alpha: 0.18),
                             blurRadius: 24,
                             offset: const Offset(0, 10),
                           ),
@@ -100,8 +184,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Text(
-                                  'Welcome to e-Lupon',
-                                  style: theme.textTheme.titleMedium?.copyWith(
+                                  'Welcome to eSumbong',
+                                  style:
+                                      theme.textTheme.titleMedium?.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -110,7 +195,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                 Text(
                                   'Secure access for citizens and barangay staff',
                                   style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.92),
+                                    color:
+                                        Colors.white.withValues(alpha: 0.92),
                                   ),
                                 ),
                               ],
@@ -120,70 +206,209 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
+
+                    // ── Auth method card ──────────────────────────────────
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: <Widget>[
-                            Text(
-                              'Authentication Method',
-                              style: theme.textTheme.titleMedium,
-                            ),
+                            Text('Authentication Method',
+                                style: theme.textTheme.titleMedium),
                             const SizedBox(height: 10),
                             SegmentedButton<bool>(
                               segments: const <ButtonSegment<bool>>[
                                 ButtonSegment<bool>(
-                                  value: true,
-                                  label: Text('Phone OTP'),
-                                ),
+                                    value: true, label: Text('Phone OTP')),
                                 ButtonSegment<bool>(
-                                  value: false,
-                                  label: Text('Email Auth'),
-                                ),
+                                    value: false, label: Text('Email Auth')),
                               ],
                               selected: <bool>{_usePhoneOtp},
-                              onSelectionChanged: (value) {
-                                setState(() => _usePhoneOtp = value.first);
-                              },
+                              onSelectionChanged: (v) => setState(() {
+                                _usePhoneOtp = v.first;
+                                _otpSent = false;
+                              }),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 16),
+
+                            // ── Full name ─────────────────────────────────
                             TextField(
-                              controller: _identityController,
-                              keyboardType: _usePhoneOtp
-                                  ? TextInputType.phone
-                                  : TextInputType.emailAddress,
-                              decoration: InputDecoration(
-                                labelText: _usePhoneOtp
-                                    ? 'Phone Number'
-                                    : 'Email Address',
-                                hintText: _usePhoneOtp
-                                    ? 'e.g. 09171234567'
-                                    : 'e.g. juan@email.com',
-                                prefixIcon: Icon(
-                                  _usePhoneOtp
-                                      ? Icons.phone_android_rounded
-                                      : Icons.alternate_email_rounded,
-                                ),
+                              controller: _fullNameCtrl,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                labelText: 'Full Name',
+                                hintText: 'e.g. Juan Dela Cruz',
+                                prefixIcon:
+                                    Icon(Icons.person_outline_rounded),
                               ),
                             ),
+                            const SizedBox(height: 12),
+
+                            // ── Phone / Email fields ──────────────────────
+                            if (_usePhoneOtp) ...<Widget>[
+                              TextField(
+                                controller: _phoneCtrl,
+                                keyboardType: TextInputType.phone,
+                                inputFormatters: <TextInputFormatter>[
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                enabled: !_otpSent,
+                                decoration: const InputDecoration(
+                                  labelText: 'Phone Number',
+                                  hintText: 'e.g. 09171234567',
+                                  prefixIcon:
+                                      Icon(Icons.phone_android_rounded),
+                                ),
+                              ),
+                              if (_otpSent) ...<Widget>[
+                                const SizedBox(height: 12),
+                                // OTP banner
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        const Color(0xFF0F766E).withValues(
+                                      alpha: 0.08,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: const Color(0xFF0F766E)
+                                          .withValues(alpha: 0.25),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: <Widget>[
+                                      const Icon(Icons.info_outline_rounded,
+                                          size: 18,
+                                          color: Color(0xFF0F766E)),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Mock OTP sent — enter any 6 digits to continue.',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            color: const Color(0xFF0F766E),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  controller: _otpCtrl,
+                                  keyboardType: TextInputType.number,
+                                  maxLength: 6,
+                                  inputFormatters: <TextInputFormatter>[
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  decoration: const InputDecoration(
+                                    labelText: 'OTP Code',
+                                    hintText: '6-digit code',
+                                    prefixIcon:
+                                        Icon(Icons.lock_outline_rounded),
+                                    counterText: '',
+                                  ),
+                                ),
+                              ],
+                            ] else ...<Widget>[
+                              TextField(
+                                controller: _emailCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  labelText: 'Email Address',
+                                  hintText: 'e.g. juan@email.com',
+                                  prefixIcon: Icon(
+                                      Icons.alternate_email_rounded),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: _passwordCtrl,
+                                obscureText: _obscurePassword,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  hintText: 'Min. 6 characters',
+                                  prefixIcon: const Icon(
+                                      Icons.lock_outline_rounded),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(_obscurePassword
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined),
+                                    onPressed: () => setState(() =>
+                                        _obscurePassword =
+                                            !_obscurePassword),
+                                  ),
+                                ),
+                              ),
+                            ],
+
                             const SizedBox(height: 18),
-                            Text(
-                              'Continue As',
-                              style: theme.textTheme.titleMedium,
-                            ),
+
+                            // ── Role selection ───────────────────────────
+                            Text('Continue As',
+                                style: theme.textTheme.titleMedium),
                             const SizedBox(height: 10),
-                            ElevatedButton.icon(
-                              onPressed: () => _login(UserRole.citizen),
-                              icon: const Icon(Icons.person_outline_rounded),
-                              label: const Text('Citizen Access'),
+                            SegmentedButton<UserRole>(
+                              segments: const <ButtonSegment<UserRole>>[
+                                ButtonSegment<UserRole>(
+                                  value: UserRole.citizen,
+                                  label: Text('Citizen'),
+                                  icon:
+                                      Icon(Icons.person_outline_rounded),
+                                ),
+                                ButtonSegment<UserRole>(
+                                  value: UserRole.barangayStaff,
+                                  label: Text('Barangay Staff'),
+                                  icon: Icon(Icons.badge_outlined),
+                                ),
+                              ],
+                              selected: <UserRole>{_role},
+                              onSelectionChanged: (v) =>
+                                  setState(() => _role = v.first),
                             ),
-                            const SizedBox(height: 10),
-                            OutlinedButton.icon(
-                              onPressed: () => _login(UserRole.barangayStaff),
-                              icon: const Icon(Icons.badge_outlined),
-                              label: const Text('Barangay Staff Access'),
-                            ),
+                            const SizedBox(height: 18),
+
+                            // ── Action buttons ───────────────────────────
+                            if (isLoading)
+                              const Center(child: CircularProgressIndicator())
+                            else if (_usePhoneOtp)
+                              _otpSent
+                                  ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: <Widget>[
+                                        ElevatedButton.icon(
+                                          onPressed: _verifyOtp,
+                                          icon: const Icon(
+                                              Icons.verified_outlined),
+                                          label:
+                                              const Text('Verify & Sign In'),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        TextButton(
+                                          onPressed: () => setState(
+                                              () => _otpSent = false),
+                                          child: const Text(
+                                              'Change phone number'),
+                                        ),
+                                      ],
+                                    )
+                                  : ElevatedButton.icon(
+                                      onPressed: _sendOtp,
+                                      icon: const Icon(
+                                          Icons.send_to_mobile_rounded),
+                                      label:
+                                          const Text('Send OTP Code'),
+                                    )
+                            else
+                              ElevatedButton.icon(
+                                onPressed: _signInWithEmail,
+                                icon: const Icon(Icons.login_rounded),
+                                label: const Text('Sign In / Register'),
+                              ),
                           ],
                         ),
                       ),
