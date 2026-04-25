@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -13,9 +14,9 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Future<void>.delayed(const Duration(milliseconds: 1400), () {
-      if (mounted) {
-        context.go('/auth');
-      }
+      if (!mounted) return;
+      final user = FirebaseAuth.instance.currentUser;
+      context.go(user != null ? '/dashboard' : '/auth');
     });
   }
 
@@ -65,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'e-Lupon',
+                  'eSumbong',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 8),

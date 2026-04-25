@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../data/case_providers.dart';
+import '../data/functions_service.dart';
 
 class HearingScheduleScreen extends ConsumerStatefulWidget {
   const HearingScheduleScreen({super.key, required this.caseId});
@@ -22,6 +23,13 @@ class _HearingScheduleScreenState extends ConsumerState<HearingScheduleScreen> {
           caseId: widget.caseId,
           hearingDate: _selectedDateTime,
         );
+
+    // Trigger summons notification (mock — no real SMS sent)
+    await ref.read(functionsServiceProvider).sendSummons(
+      caseId: widget.caseId,
+      respondentPhone: '09000000000', // TODO: pull from case/respondent record
+      hearingDate: _selectedDateTime,
+    );
 
     if (!mounted) {
       return;

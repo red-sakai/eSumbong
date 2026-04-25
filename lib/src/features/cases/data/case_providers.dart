@@ -17,7 +17,7 @@ final casesStreamProvider = StreamProvider<List<ComplaintCase>>((ref) {
 
 final visibleCasesStreamProvider = StreamProvider<List<ComplaintCase>>((ref) {
   final repository = ref.watch(caseRepositoryProvider);
-  final currentUser = ref.watch(authControllerProvider);
+  final currentUser = ref.watch(currentUserProvider);
 
   if (currentUser == null) {
     return Stream<List<ComplaintCase>>.value(const <ComplaintCase>[]);
@@ -28,13 +28,17 @@ final visibleCasesStreamProvider = StreamProvider<List<ComplaintCase>>((ref) {
   }
 
   final normalizedName = currentUser.fullName.trim().toLowerCase();
+  final normalizedPhone = currentUser.phoneOrEmail.trim().toLowerCase();
+
   return repository.watchCases().map(
     (cases) => cases
         .where((item) {
           final matchesOwner = item.createdByUserId == currentUser.id;
+          final matchesPhone = normalizedPhone.isNotEmpty &&
+              item.createdByPhone.trim().toLowerCase() == normalizedPhone;
           final matchesComplainantName =
               item.complainantName.trim().toLowerCase() == normalizedName;
-          return matchesOwner || matchesComplainantName;
+          return matchesOwner || matchesPhone || matchesComplainantName;
         })
         .toList(growable: false),
   );
@@ -45,13 +49,14 @@ final caseByIdProvider = StreamProvider.family<ComplaintCase?, String>((
   caseId,
 ) {
   final repository = ref.watch(caseRepositoryProvider);
-  final currentUser = ref.watch(authControllerProvider);
+  final currentUser = ref.watch(currentUserProvider);
 
   if (currentUser == null) {
     return Stream<ComplaintCase?>.value(null);
   }
 
   final normalizedName = currentUser.fullName.trim().toLowerCase();
+  final normalizedPhone = currentUser.phoneOrEmail.trim().toLowerCase();
 
   return repository.watchCases().map((cases) {
     for (final item in cases) {
@@ -63,10 +68,12 @@ final caseByIdProvider = StreamProvider.family<ComplaintCase?, String>((
       }
 
       final matchesOwner = item.createdByUserId == currentUser.id;
+      final matchesPhone = normalizedPhone.isNotEmpty &&
+          item.createdByPhone.trim().toLowerCase() == normalizedPhone;
       final matchesComplainantName =
           item.complainantName.trim().toLowerCase() == normalizedName;
 
-      if (matchesOwner || matchesComplainantName) {
+      if (matchesOwner || matchesPhone || matchesComplainantName) {
         return item;
       }
       return null;

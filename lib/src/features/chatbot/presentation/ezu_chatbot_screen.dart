@@ -1,28 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class EzuChatbotScreen extends StatefulWidget {
+import '../data/ezu_gemini_service.dart';
+
+class EzuChatbotScreen extends ConsumerStatefulWidget {
   const EzuChatbotScreen({super.key});
 
   @override
-  State<EzuChatbotScreen> createState() => _EzuChatbotScreenState();
+  ConsumerState<EzuChatbotScreen> createState() => _EzuChatbotScreenState();
 }
 
-class _EzuChatbotScreenState extends State<EzuChatbotScreen> {
+class _EzuChatbotScreenState extends ConsumerState<EzuChatbotScreen> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<_ChatMessage> _messages = <_ChatMessage>[
     const _ChatMessage(
       text:
-          'Hello, I am Ezu. I can answer general legal questions in the Philippines and summarize Republic Acts such as RA 9262, RA 7160, RA 7610, RA 10173, and RA 9344.',
+          'Hello! I am Ezu 👋 — your Philippine legal assistant inside eSumbong.\n\n'
+          'I can answer general legal questions, summarize Republic Acts (RA 9262, RA 7160, RA 7610, RA 10173, RA 9344), and explain the Katarungang Pambarangay process.\n\n'
+          'What would you like to know?',
       isUser: false,
+      isError: false,
     ),
   ];
+
+  bool _isTyping = false;
 
   static const List<String> _quickPrompts = <String>[
     'Summarize RA 9262',
     'Summarize RA 7160',
     'What is Katarungang Pambarangay?',
     'What is VAWC?',
+    'Summarize RA 9344',
+    'Summarize RA 10173',
   ];
 
   @override
@@ -32,29 +42,71 @@ class _EzuChatbotScreenState extends State<EzuChatbotScreen> {
     super.dispose();
   }
 
-  void _send([String? prompt]) {
-    final input = (prompt ?? _controller.text).trim();
-    if (input.isEmpty) {
-      return;
-    }
+  // ── Scroll ────────────────────────────────────────────────────────────────
 
-    setState(() {
-      _messages.add(_ChatMessage(text: input, isUser: true));
-      _messages.add(_ChatMessage(text: _buildResponse(input), isUser: false));
-      _controller.clear();
-    });
-
+  void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollController.hasClients) {
-        return;
-      }
+      if (!_scrollController.hasClients) return;
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 220),
+        duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
       );
     });
   }
+
+  // ── Send ──────────────────────────────────────────────────────────────────
+
+  Future<void> _send([String? prompt]) async {
+    final input = (prompt ?? _controller.text).trim();
+    if (input.isEmpty || _isTyping) return;
+
+    _controller.clear();
+
+    setState(() {
+      _messages.add(_ChatMessage(text: input, isUser: true));
+      _isTyping = true;
+    });
+    _scrollToBottom();
+
+    try {
+      final gemini = ref.read(ezuGeminiServiceProvider);
+      final response = await gemini.send(input);
+      if (!mounted) return;
+      setState(() {
+        _isTyping = false;
+        _messages.add(_ChatMessage(text: response, isUser: false));
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isTyping = false;
+        _messages.add(_ChatMessage(
+          text:
+              '⚠️ Ezu could not reach the server. Please check your connection and try again.\n\nError: $e',
+          isUser: false,
+          isError: true,
+        ));
+      });
+    }
+
+    _scrollToBottom();
+  }
+
+  void _resetChat() {
+    ref.read(ezuGeminiServiceProvider).resetConversation();
+    setState(() {
+      _messages
+        ..clear()
+        ..add(const _ChatMessage(
+          text:
+              'Conversation reset. How can I help you with Philippine law today?',
+          isUser: false,
+        ));
+    });
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +114,7 @@ class _EzuChatbotScreenState extends State<EzuChatbotScreen> {
 
     return Column(
       children: <Widget>[
+        // ── Header ────────────────────────────────────────────────────────
         Container(
           margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           padding: const EdgeInsets.all(16),
@@ -82,43 +135,73 @@ class _EzuChatbotScreenState extends State<EzuChatbotScreen> {
                   color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.smart_toy_rounded, color: Colors.white),
+                child:
+                    const Icon(Icons.smart_toy_rounded, color: Colors.white),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Ask Ezu about Philippine laws and Republic Acts',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Ask Ezu — Philippine Legal Assistant',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'Philippine Legal Assistant',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              IconButton(
+                tooltip: 'Reset conversation',
+                icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                onPressed: _resetChat,
               ),
             ],
           ),
         ),
+
+        // ── Quick prompts ─────────────────────────────────────────────────
         SizedBox(
           height: 40,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             scrollDirection: Axis.horizontal,
+            itemCount: _quickPrompts.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final prompt = _quickPrompts[index];
               return ActionChip(
                 label: Text(prompt),
-                onPressed: () => _send(prompt),
+                onPressed: _isTyping ? null : () => _send(prompt),
               );
             },
-            separatorBuilder: (_, index) => const SizedBox(width: 8),
-            itemCount: _quickPrompts.length,
           ),
         ),
         const SizedBox(height: 8),
+
+        // ── Message list ──────────────────────────────────────────────────
         Expanded(
           child: ListView.builder(
             controller: _scrollController,
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            itemCount: _messages.length,
+            itemCount: _messages.length + (_isTyping ? 1 : 0),
             itemBuilder: (context, index) {
+              // Typing indicator bubble at the end
+              if (_isTyping && index == _messages.length) {
+                return const Align(
+                  alignment: Alignment.centerLeft,
+                  child: _TypingIndicator(),
+                );
+              }
+
               final message = _messages[index];
               final isUser = message.isUser;
 
@@ -129,25 +212,42 @@ class _EzuChatbotScreenState extends State<EzuChatbotScreen> {
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
+                      horizontal: 14, vertical: 10),
                   constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.78,
+                    maxWidth: MediaQuery.of(context).size.width * 0.80,
                   ),
                   decoration: BoxDecoration(
-                    color: isUser
-                        ? theme.colorScheme.primary
-                        : theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(14),
+                    color: message.isError
+                        ? theme.colorScheme.errorContainer
+                        : isUser
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.surface,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(isUser ? 16 : 4),
+                      bottomRight: Radius.circular(isUser ? 4 : 16),
+                    ),
                     border: isUser
                         ? null
                         : Border.all(color: const Color(0xFFD6DEEA)),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Text(
                     message.text,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: isUser ? Colors.white : null,
+                      color: message.isError
+                          ? theme.colorScheme.onErrorContainer
+                          : isUser
+                              ? Colors.white
+                              : null,
+                      height: 1.45,
                     ),
                   ),
                 ),
@@ -155,6 +255,8 @@ class _EzuChatbotScreenState extends State<EzuChatbotScreen> {
             },
           ),
         ),
+
+        // ── Input bar ─────────────────────────────────────────────────────
         SafeArea(
           top: false,
           child: Padding(
@@ -165,19 +267,34 @@ class _EzuChatbotScreenState extends State<EzuChatbotScreen> {
                   child: TextField(
                     controller: _controller,
                     minLines: 1,
-                    maxLines: 3,
+                    maxLines: 4,
+                    enabled: !_isTyping,
+                    textInputAction: TextInputAction.send,
                     onSubmitted: (_) => _send(),
-                    decoration: const InputDecoration(hintText: 'Ask Ezu...'),
+                    decoration: InputDecoration(
+                      hintText: _isTyping
+                          ? 'Ezu is typing…'
+                          : 'Ask Ezu a Philippine law question…',
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
-                  onPressed: _send,
+                  onPressed: _isTyping ? null : _send,
                   style: FilledButton.styleFrom(
-                    minimumSize: const Size(46, 46),
+                    minimumSize: const Size(48, 48),
                     padding: EdgeInsets.zero,
                   ),
-                  child: const Icon(Icons.send_rounded),
+                  child: _isTyping
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.send_rounded),
                 ),
               ],
             ),
@@ -186,59 +303,104 @@ class _EzuChatbotScreenState extends State<EzuChatbotScreen> {
       ],
     );
   }
+}
 
-  String _buildResponse(String input) {
-    final lower = input.toLowerCase();
-    final match = RegExp(r'ra\s*([0-9]{3,5})').firstMatch(lower);
-    final ra = match?.group(1);
+// ── Typing indicator ──────────────────────────────────────────────────────────
 
-    if (lower.contains('summarize') ||
-        lower.contains('summary') ||
-        ra != null) {
-      final summary = _summarizeRa(ra);
-      if (summary != null) {
-        return summary;
-      }
-      return 'I do not have that RA in my local knowledge yet. Try RA 9262, RA 7160, RA 7610, RA 10173, or RA 9344.';
-    }
+class _TypingIndicator extends StatefulWidget {
+  const _TypingIndicator();
 
-    if (lower.contains('katarungang pambarangay') ||
-        lower.contains('barangay justice')) {
-      return 'Katarungang Pambarangay is a community-based dispute resolution system under the Local Government Code. It generally requires mediation/conciliation at the barangay level before certain civil disputes and minor offenses can proceed in court.';
-    }
+  @override
+  State<_TypingIndicator> createState() => _TypingIndicatorState();
+}
 
-    if (lower.contains('vawc')) {
-      return 'VAWC refers to violence against women and their children under RA 9262. It covers physical, sexual, psychological, and economic abuse committed by a spouse, former spouse, partner, or person with whom the woman has a child.';
-    }
+class _TypingIndicatorState extends State<_TypingIndicator>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
 
-    if (lower.contains('not legal advice') || lower.contains('lawyer')) {
-      return 'I provide general legal information only. For legal strategy, representation, or case-specific advice, consult a licensed attorney in the Philippines.';
-    }
-
-    return 'I can help with legal-law overviews and Republic Act summaries. Try asking: "Summarize RA 9262" or "What is Katarungang Pambarangay?"';
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
   }
 
-  String? _summarizeRa(String? ra) {
-    switch (ra) {
-      case '9262':
-        return 'RA 9262 (Anti-VAWC Act): Protects women and children from violence in intimate or family relationships. It defines physical, sexual, psychological, and economic abuse, and provides protection orders plus criminal penalties.';
-      case '7160':
-        return 'RA 7160 (Local Government Code of 1991): Defines local government powers, decentralization, revenue allotments, and barangay governance including Katarungang Pambarangay mechanisms for local dispute resolution.';
-      case '7610':
-        return 'RA 7610 (Special Protection of Children Against Abuse, Exploitation and Discrimination Act): Provides special safeguards for children against abuse, trafficking, exploitation, and harmful labor conditions, with corresponding penalties.';
-      case '10173':
-        return 'RA 10173 (Data Privacy Act of 2012): Protects personal information in government and private sector processing. It sets data subject rights, lawful processing rules, security requirements, and penalties for violations.';
-      case '9344':
-        return 'RA 9344 (Juvenile Justice and Welfare Act): Establishes a child-sensitive justice system, diversion, intervention, and rehabilitation for children in conflict with the law while protecting their rights.';
-      default:
-        return null;
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+          bottomLeft: Radius.circular(4),
+          bottomRight: Radius.circular(16),
+        ),
+        border: Border.all(color: const Color(0xFFD6DEEA)),
+      ),
+      child: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            _Dot(opacity: _animation.value),
+            const SizedBox(width: 4),
+            _Dot(opacity: (1.0 - _animation.value).clamp(0.3, 1.0)),
+            const SizedBox(width: 4),
+            _Dot(opacity: _animation.value),
+          ],
+        ),
+      ),
+    );
   }
 }
 
+class _Dot extends StatelessWidget {
+  const _Dot({required this.opacity});
+
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary,
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Message model ─────────────────────────────────────────────────────────────
+
 class _ChatMessage {
-  const _ChatMessage({required this.text, required this.isUser});
+  const _ChatMessage({
+    required this.text,
+    required this.isUser,
+    this.isError = false,
+  });
 
   final String text;
   final bool isUser;
+  final bool isError;
 }
