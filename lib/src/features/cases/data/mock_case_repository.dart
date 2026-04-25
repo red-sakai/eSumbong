@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../domain/case_event.dart';
 import '../domain/case_status.dart';
+import '../domain/cfa_record.dart';
 import '../domain/complaint_case.dart';
 import 'case_repository.dart';
 
@@ -12,6 +13,7 @@ class MockCaseRepository implements CaseRepository {
     _cases = <ComplaintCase>[
       ComplaintCase(
         id: 'KP-2026-0001',
+        createdByUserId: 'seed-user-ana',
         complainantName: 'Ana Santos',
         respondentName: 'Pedro Reyes',
         description: 'Noise complaint and recurring disturbance at night.',
@@ -33,6 +35,7 @@ class MockCaseRepository implements CaseRepository {
       ),
       ComplaintCase(
         id: 'KP-2026-0002',
+        createdByUserId: 'seed-user-maria',
         complainantName: 'Maria Lopez',
         respondentName: 'Jose Garcia',
         description: 'Boundary dispute requiring mediation hearing.',
@@ -133,20 +136,53 @@ class MockCaseRepository implements CaseRepository {
       if (item.id != caseId) {
         return item;
       }
+      final cfaRecord = _buildCfaRecord(item);
+
       return item.copyWith(
         cfaGenerated: true,
+        cfaRecord: cfaRecord,
         status: CaseStatus.completed,
         events: <CaseEvent>[
           ...item.events,
           CaseEvent(
             title: 'Certificate to File Action Generated',
-            description: 'Mock signed document generated with QR verification.',
+            description:
+                'Certificate ${cfaRecord.certificateNumber} issued and signed by ${cfaRecord.signatoryName}.',
             timestamp: DateTime.now(),
           ),
         ],
       );
     }).toList();
     _emit();
+  }
+
+  CfaRecord _buildCfaRecord(ComplaintCase item) {
+    final issuedAt = DateTime.now();
+    final year = DateFormat('yyyy').format(issuedAt);
+    final certificateNumber = 'CFA-$year-${item.id.replaceAll('KP-', '')}';
+    final signatoryName = 'Lupon Secretary Maria Dela Cruz';
+    final issuedIso = issuedAt.toIso8601String();
+    final basePayload =
+        'CFA|case=${item.id}|cert=$certificateNumber|issued=$issuedIso|signatory=$signatoryName';
+    final verificationHash = _hashText(basePayload);
+    final qrPayload = '$basePayload|hash=$verificationHash';
+
+    return CfaRecord(
+      certificateNumber: certificateNumber,
+      issuedAt: issuedAt,
+      signatoryName: signatoryName,
+      qrPayload: qrPayload,
+      verificationHash: verificationHash,
+    );
+  }
+
+  String _hashText(String input) {
+    int hash = 0x811c9dc5;
+    for (final codeUnit in input.codeUnits) {
+      hash ^= codeUnit;
+      hash = (hash * 0x01000193) & 0xFFFFFFFF;
+    }
+    return hash.toRadixString(16).padLeft(8, '0');
   }
 
   void _emit() {

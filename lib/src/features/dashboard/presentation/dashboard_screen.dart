@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../cases/data/case_providers.dart';
+import '../../chatbot/presentation/ezu_chatbot_screen.dart';
 import '../../notifications/presentation/notifications_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
 import '../../../shared/widgets/app_card.dart';
@@ -20,7 +21,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   static const _titles = <String>[
     'Overview',
-    'Cases',
+    'Ezu',
     'Notifications',
     'Profile',
   ];
@@ -29,7 +30,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget build(BuildContext context) {
     final pages = <Widget>[
       const _DashboardHomeTab(),
-      const _CaseListTab(),
+      const EzuChatbotScreen(),
       const NotificationsScreen(),
       ProfileScreen(onLogout: () => context.go('/auth')),
     ];
@@ -46,7 +47,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ],
       ),
       body: IndexedStack(index: _index, children: pages),
-      floatingActionButton: _index == 0 || _index == 1
+      floatingActionButton: _index == 0
           ? FloatingActionButton.extended(
               onPressed: () => context.push('/file-complaint'),
               icon: const Icon(Icons.note_add_outlined),
@@ -59,8 +60,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         destinations: const <NavigationDestination>[
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
           NavigationDestination(
-            icon: Icon(Icons.gavel_outlined),
-            label: 'Cases',
+            icon: Icon(Icons.smart_toy_outlined),
+            label: 'Ezu',
           ),
           NavigationDestination(
             icon: Icon(Icons.notifications_outlined),
@@ -81,7 +82,7 @@ class _DashboardHomeTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final casesAsync = ref.watch(casesStreamProvider);
+    final casesAsync = ref.watch(visibleCasesStreamProvider);
     final theme = Theme.of(context);
 
     return casesAsync.when(
@@ -185,45 +186,6 @@ class _DashboardHomeTab extends ConsumerWidget {
           ],
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Error: $error')),
-    );
-  }
-}
-
-class _CaseListTab extends ConsumerWidget {
-  const _CaseListTab();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final casesAsync = ref.watch(casesStreamProvider);
-
-    return casesAsync.when(
-      data: (cases) => ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-        itemCount: cases.length,
-        itemBuilder: (context, index) {
-          final item = cases[index];
-          return AppCard(
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(item.id),
-              subtitle: Text(item.description),
-              trailing: StatusChip(status: item.status),
-              leading: CircleAvatar(
-                backgroundColor: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.12),
-                child: Icon(
-                  Icons.gavel_rounded,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              onTap: () => context.push('/case/${item.id}'),
-            ),
-          );
-        },
-      ),
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(child: Text('Error: $error')),
     );

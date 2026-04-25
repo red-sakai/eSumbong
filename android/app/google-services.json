@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "776638379002",
+    "project_id": "esumbong-1fd58",
+    "storage_bucket": "esumbong-1fd58.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:776638379002:android:be5dd13fd102d4bb43ea43",
+        "android_client_info": {
+          "package_name": "com.example.esumbong"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAkEYRuvWv8h0YUbYw7pp-qh_fhz5e_t8I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
