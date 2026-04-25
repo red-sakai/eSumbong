@@ -22,6 +22,11 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _index = 0;
 
+  /// Marks all current notifications as seen, resetting the badge to 0.
+  void _markRead() {
+    final total = ref.read(notificationCountProvider);
+    ref.read(notificationLastSeenProvider.notifier).state = total;
+  }
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
@@ -55,12 +60,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ],
           IconButton(
-            onPressed: () => context.push('/notifications'),
+            onPressed: () {
+              _markRead();
+              context.push('/notifications');
+            },
             tooltip: 'View notifications',
             icon: Badge(
-              isLabelVisible: ref.watch(notificationCountProvider) > 0,
+              isLabelVisible: ref.watch(unreadNotificationCountProvider) > 0,
               label: Text(
-                '${ref.watch(notificationCountProvider) > 99 ? '99+' : ref.watch(notificationCountProvider)}',
+                '${ref.watch(unreadNotificationCountProvider) > 99 ? '99+' : ref.watch(unreadNotificationCountProvider)}',
               ),
               child: const Icon(Icons.notifications_none_rounded),
             ),
@@ -78,7 +86,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
+        onDestinationSelected: (value) {
+          if (value == 2) _markRead(); // Notifications tab
+          setState(() => _index = value);
+        },
         destinations: <NavigationDestination>[
           NavigationDestination(
             icon: Icon(isStaff
@@ -92,9 +103,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
           NavigationDestination(
             icon: Badge(
-              isLabelVisible: ref.watch(notificationCountProvider) > 0,
+              isLabelVisible: ref.watch(unreadNotificationCountProvider) > 0,
               label: Text(
-                '${ref.watch(notificationCountProvider) > 99 ? '99+' : ref.watch(notificationCountProvider)}',
+                '${ref.watch(unreadNotificationCountProvider) > 99 ? '99+' : ref.watch(unreadNotificationCountProvider)}',
               ),
               child: const Icon(Icons.notifications_outlined),
             ),

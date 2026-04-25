@@ -148,7 +148,7 @@ class _ProfileHeader extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: <Color>[Color(0xFF0D6B64), Color(0xFF155E75)],
+          colors: <Color>[Color(0xFF1D4ED8), Color(0xFF1E3A8A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -336,13 +336,13 @@ class _MenuTile extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F766E).withValues(alpha: 0.08),
+                    color: const Color(0xFF1D4ED8).withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     icon,
                     size: 20,
-                    color: const Color(0xFF0F766E),
+                    color: const Color(0xFF1D4ED8),
                   ),
                 ),
                 const SizedBox(width: 14),

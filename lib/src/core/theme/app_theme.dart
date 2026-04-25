@@ -4,13 +4,13 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   AppTheme._();
 
-  static const Color primary = Color(0xFF0F766E);
-  static const Color secondary = Color(0xFFF59E0B);
-  static const Color background = Color(0xFFF5F7FB);
+  static const Color primary = Color(0xFF1D4ED8);   // indigo-blue
+  static const Color secondary = Color(0xFFF59E0B); // amber
+  static const Color background = Color(0xFFF4F6FB);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceTint = Color(0xFFE6EEF8);
-  static const Color textPrimary = Color(0xFF10243E);
-  static const Color textSecondary = Color(0xFF4A5A70);
+  static const Color surfaceTint = Color(0xFFE8EEFB);
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF475569);
 
   static ThemeData get lightTheme {
     final textTheme = GoogleFonts.outfitTextTheme().copyWith(

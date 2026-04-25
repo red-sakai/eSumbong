@@ -149,8 +149,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         borderRadius: BorderRadius.circular(24),
                         gradient: const LinearGradient(
                           colors: <Color>[
-                            Color(0xFF0F766E),
-                            Color(0xFF155E75),
+                            Color(0xFF1D4ED8),
+                            Color(0xFF1E3A8A),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -158,7 +158,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         boxShadow: <BoxShadow>[
                           BoxShadow(
                             color:
-                                const Color(0xFF0F766E).withValues(alpha: 0.18),
+                                const Color(0xFF1D4ED8).withValues(alpha: 0.22),
                             blurRadius: 24,
                             offset: const Offset(0, 10),
                           ),
@@ -166,30 +166,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       ),
                       child: Row(
                         children: <Widget>[
-                          Container(
+                          Image.asset(
+                            'lib/src/assets/esumbong_logo.png',
                             width: 52,
                             height: 52,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(
-                              Icons.verified_user_rounded,
-                              color: Colors.white,
-                            ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
-                                Text(
-                                  'Welcome to eSumbong',
-                                  style:
-                                      theme.textTheme.titleMedium?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                Image.asset(
+                                  'lib/src/assets/esumbong_text.png',
+                                  height: 22,
+                                  alignment: Alignment.centerLeft,
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -269,12 +259,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                       horizontal: 14, vertical: 10),
                                   decoration: BoxDecoration(
                                     color:
-                                        const Color(0xFF0F766E).withValues(
+                                        const Color(0xFF1D4ED8).withValues(
                                       alpha: 0.08,
                                     ),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: const Color(0xFF0F766E)
+                                      color: const Color(0xFF1D4ED8)
                                           .withValues(alpha: 0.25),
                                     ),
                                   ),
@@ -282,14 +272,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                     children: <Widget>[
                                       const Icon(Icons.info_outline_rounded,
                                           size: 18,
-                                          color: Color(0xFF0F766E)),
+                                          color: Color(0xFF1D4ED8)),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           'Mock OTP sent — enter any 6 digits to continue.',
                                           style: theme.textTheme.bodySmall
                                               ?.copyWith(
-                                            color: const Color(0xFF0F766E),
+                                            color: const Color(0xFF1D4ED8),
                                           ),
                                         ),
                                       ),
