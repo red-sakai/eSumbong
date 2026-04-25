@@ -121,39 +121,34 @@ class _EzuChatbotScreenState extends ConsumerState<EzuChatbotScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             gradient: const LinearGradient(
-              colors: <Color>[Color(0xFF0F766E), Color(0xFF155E75)],
+              colors: <Color>[Color(0xFF1D4ED8), Color(0xFF1E3A8A)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
           ),
           child: Row(
             children: <Widget>[
-              Container(
+              // Logo image
+              Image.asset(
+                'lib/src/assets/esumbong_logo.png',
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child:
-                    const Icon(Icons.smart_toy_rounded, color: Colors.white),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
+                    Image.asset(
+                      'lib/src/assets/esumbong_text.png',
+                      height: 20,
+                      alignment: Alignment.centerLeft,
+                    ),
+                    const SizedBox(height: 2),
                     Text(
                       'Ask Ezu — Philippine Legal Assistant',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      'Philippine Legal Assistant',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.75),
+                        color: Colors.white.withValues(alpha: 0.82),
                       ),
                     ),
                   ],

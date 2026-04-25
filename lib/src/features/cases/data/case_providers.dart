@@ -89,3 +89,15 @@ final notificationCountProvider = Provider<int>((ref) {
   if (cases == null) return 0;
   return cases.fold<int>(0, (sum, c) => sum + c.events.length);
 });
+
+/// Stores the total notification count at the time the user last
+/// opened the Notifications screen. Used to compute the unread count.
+final notificationLastSeenProvider = StateProvider<int>((_) => 0);
+
+/// Number of notifications the user has NOT yet seen.
+/// Shown on the badge; resets to 0 when [markNotificationsRead] is called.
+final unreadNotificationCountProvider = Provider<int>((ref) {
+  final total = ref.watch(notificationCountProvider);
+  final lastSeen = ref.watch(notificationLastSeenProvider);
+  return (total - lastSeen).clamp(0, 999);
+});
