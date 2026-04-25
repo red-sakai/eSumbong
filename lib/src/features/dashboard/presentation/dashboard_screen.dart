@@ -56,8 +56,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ],
           IconButton(
             onPressed: () => context.push('/notifications'),
-            icon: const Icon(Icons.notifications_none_rounded),
             tooltip: 'View notifications',
+            icon: Badge(
+              isLabelVisible: ref.watch(notificationCountProvider) > 0,
+              label: Text(
+                '${ref.watch(notificationCountProvider) > 99 ? '99+' : ref.watch(notificationCountProvider)}',
+              ),
+              child: const Icon(Icons.notifications_none_rounded),
+            ),
           ),
         ],
       ),
@@ -84,8 +90,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             icon: Icon(Icons.smart_toy_outlined),
             label: 'Ezu',
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.notifications_outlined),
+          NavigationDestination(
+            icon: Badge(
+              isLabelVisible: ref.watch(notificationCountProvider) > 0,
+              label: Text(
+                '${ref.watch(notificationCountProvider) > 99 ? '99+' : ref.watch(notificationCountProvider)}',
+              ),
+              child: const Icon(Icons.notifications_outlined),
+            ),
             label: 'Notifications',
           ),
           const NavigationDestination(
