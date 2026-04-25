@@ -1,5 +1,10 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+
+# Work around third-party dependencies that still call
+# cmake_minimum_required(VERSION 3.1) under newer CMake versions.
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+
 project(esumbong LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
