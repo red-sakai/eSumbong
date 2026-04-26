@@ -10,4 +10,6 @@ abstract class CaseRepository {
   });
   Future<void> logNoShow(String caseId);
   Future<void> generateCfa(String caseId);
+  Future<void> dismissCase(String caseId);
+  Future<void> declineCfa(String caseId);
 }

@@ -36,7 +36,7 @@ class _SplashScreenState extends State<SplashScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
             margin: const EdgeInsets.symmetric(horizontal: 28),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color.fromARGB(255, 25, 178, 224),
               borderRadius: BorderRadius.circular(24),
               boxShadow: <BoxShadow>[
                 BoxShadow(
@@ -58,10 +58,9 @@ class _SplashScreenState extends State<SplashScreen> {
                     ).colorScheme.primary.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Icon(
-                    Icons.balance_rounded,
-                    size: 38,
-                    color: Theme.of(context).colorScheme.primary,
+                  child: Image.asset(
+                    'lib/src/assets/esumbong_logo.png',
+                    fit: BoxFit.contain,
                   ),
                 ),
                 const SizedBox(height: 16),

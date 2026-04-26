@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../data/ezu_gemini_service.dart';
 
 class EzuChatbotScreen extends ConsumerStatefulWidget {
@@ -121,7 +122,7 @@ class _EzuChatbotScreenState extends ConsumerState<EzuChatbotScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
             gradient: const LinearGradient(
-              colors: <Color>[Color(0xFF1D4ED8), Color(0xFF1E3A8A)],
+              colors: <Color>[AppTheme.primary, AppTheme.primaryDark],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

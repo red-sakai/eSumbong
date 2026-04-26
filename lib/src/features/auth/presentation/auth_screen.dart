@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../cases/domain/user_role.dart';
 import 'auth_controller.dart';
 
@@ -148,9 +149,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(24),
                         gradient: const LinearGradient(
-                          colors: <Color>[
-                            Color(0xFF1D4ED8),
-                            Color(0xFF1E3A8A),
+                            colors: <Color>[
+                            AppTheme.primary,
+                            AppTheme.primaryDark,
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -158,7 +159,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         boxShadow: <BoxShadow>[
                           BoxShadow(
                             color:
-                                const Color(0xFF1D4ED8).withValues(alpha: 0.22),
+                                AppTheme.primary.withValues(alpha: 0.22),
                             blurRadius: 24,
                             offset: const Offset(0, 10),
                           ),
@@ -259,12 +260,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                       horizontal: 14, vertical: 10),
                                   decoration: BoxDecoration(
                                     color:
-                                        const Color(0xFF1D4ED8).withValues(
+                                        AppTheme.primary.withValues(
                                       alpha: 0.08,
                                     ),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: const Color(0xFF1D4ED8)
+                                      color: AppTheme.primary
                                           .withValues(alpha: 0.25),
                                     ),
                                   ),
@@ -272,14 +273,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                     children: <Widget>[
                                       const Icon(Icons.info_outline_rounded,
                                           size: 18,
-                                          color: Color(0xFF1D4ED8)),
+                                          color: AppTheme.primary),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           'Mock OTP sent — enter any 6 digits to continue.',
                                           style: theme.textTheme.bodySmall
                                               ?.copyWith(
-                                            color: const Color(0xFF1D4ED8),
+                                            color: AppTheme.primary,
                                           ),
                                         ),
                                       ),

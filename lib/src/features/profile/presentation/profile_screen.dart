@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../cases/domain/user_role.dart';
 
@@ -148,7 +149,7 @@ class _ProfileHeader extends StatelessWidget {
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: <Color>[Color(0xFF1D4ED8), Color(0xFF1E3A8A)],
+          colors: <Color>[AppTheme.primary, AppTheme.primaryDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -336,13 +337,13 @@ class _MenuTile extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1D4ED8).withValues(alpha: 0.08),
+                    color: AppTheme.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     icon,
                     size: 20,
-                    color: const Color(0xFF1D4ED8),
+                    color: AppTheme.primary,
                   ),
                 ),
                 const SizedBox(width: 14),

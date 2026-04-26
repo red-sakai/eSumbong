@@ -16,6 +16,7 @@ class ComplaintCase {
     this.evidenceUrls = const <String>[],
     this.noShowCount = 0,
     this.cfaGenerated = false,
+    this.cfaDeclined = false,
     this.cfaRecord,
   });
 
@@ -33,7 +34,39 @@ class ComplaintCase {
   final List<String> evidenceUrls;
   final int noShowCount;
   final bool cfaGenerated;
+  final bool cfaDeclined;
   final CfaRecord? cfaRecord;
+  
+  /// Returns the date the case was filed, based on the first event.
+  DateTime get filingDate {
+    if (events.isEmpty) return incidentDate;
+    final filedEvent = events.firstWhere(
+      (e) => e.title.contains('Case Filed'),
+      orElse: () => events.first,
+    );
+    return filedEvent.timestamp;
+  }
+
+  /// Whether a CFA should be automatically generated based on business rules.
+  bool get shouldAutoGenerateCfa {
+    if (cfaGenerated) return false;
+    if (status == CaseStatus.dismissed) return false;
+    
+    // Rule 1: 3 no-shows (Still automatic)
+    if (noShowCount >= 3) return true;
+    
+    return false;
+  }
+
+  /// Whether a staff member needs to approve CFA generation for this case.
+  bool get isCfaApprovalPending {
+    if (cfaGenerated || cfaDeclined) return false;
+    if (status == CaseStatus.dismissed) return false;
+
+    // Rule 2: Older than 30 days (Manual approval required)
+    final age = DateTime.now().difference(filingDate).inDays;
+    return age >= 30;
+  }
 
   factory ComplaintCase.fromJson(String id, Map<String, dynamic> json) {
     final eventsRaw = json['events'] as List<dynamic>? ?? <dynamic>[];
@@ -58,6 +91,7 @@ class ComplaintCase {
               .cast<String>(),
       noShowCount: json['noShowCount'] as int? ?? 0,
       cfaGenerated: json['cfaGenerated'] as bool? ?? false,
+      cfaDeclined: json['cfaDeclined'] as bool? ?? false,
       cfaRecord: cfaRaw != null ? CfaRecord.fromJson(cfaRaw) : null,
     );
   }
@@ -74,6 +108,7 @@ class ComplaintCase {
         'evidenceUrls': evidenceUrls,
         'noShowCount': noShowCount,
         'cfaGenerated': cfaGenerated,
+        'cfaDeclined': cfaDeclined,
         if (cfaRecord != null) 'cfaRecord': cfaRecord!.toJson(),
       };
 
@@ -90,6 +125,7 @@ class ComplaintCase {
     List<String>? evidenceUrls,
     int? noShowCount,
     bool? cfaGenerated,
+    bool? cfaDeclined,
     CfaRecord? cfaRecord,
   }) {
     return ComplaintCase(
@@ -105,6 +141,7 @@ class ComplaintCase {
       evidenceUrls: evidenceUrls ?? this.evidenceUrls,
       noShowCount: noShowCount ?? this.noShowCount,
       cfaGenerated: cfaGenerated ?? this.cfaGenerated,
+      cfaDeclined: cfaDeclined ?? this.cfaDeclined,
       cfaRecord: cfaRecord ?? this.cfaRecord,
     );
   }

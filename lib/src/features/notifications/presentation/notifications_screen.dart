@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../cases/data/case_providers.dart';
+import '../../cases/data/functions_service.dart';
 import '../../cases/domain/complaint_case.dart';
+import '../../cases/domain/user_role.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/section_header.dart';
 
@@ -19,7 +22,7 @@ class NotificationsScreen extends ConsumerWidget {
 
     final body = updatesAsync.when(
       data: (cases) {
-        final updates = _buildUpdates(cases);
+        final updates = _buildUpdates(ref, cases);
 
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -40,26 +43,79 @@ class NotificationsScreen extends ConsumerWidget {
             else
               ...updates.map(
                 (update) => AppCard(
-                  child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    onTap: () => context.push('/case/${update.caseId}'),
-                    leading: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: update.color.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(10),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        onTap: () => context.push('/case/${update.caseId}'),
+                        leading: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: update.color.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child:
+                              Icon(update.icon, size: 20, color: update.color),
+                        ),
+                        title: Text(update.title),
+                        subtitle: Text(
+                          '${update.description}\nCase ${update.caseId}',
+                        ),
+                        trailing: update.isAction
+                            ? null
+                            : Text(
+                                _formatTime(update.timestamp),
+                                style: Theme.of(context).textTheme.labelSmall,
+                              ),
                       ),
-                      child: Icon(update.icon, size: 20, color: update.color),
-                    ),
-                    title: Text(update.title),
-                    subtitle: Text(
-                      '${update.description}\nCase ${update.caseId}',
-                    ),
-                    trailing: Text(
-                      _formatTime(update.timestamp),
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
+                      if (update.isAction) ...[
+                        const Divider(indent: 52),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(52, 0, 8, 8),
+                          child: Row(
+                            children: [
+                              TextButton(
+                                onPressed: () async {
+                                  await ref
+                                      .read(caseRepositoryProvider)
+                                      .declineCfa(update.caseId);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text('CFA Declined.')),
+                                    );
+                                  }
+                                },
+                                child: const Text('Reject',
+                                    style: TextStyle(color: Colors.red)),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await ref
+                                      .read(caseRepositoryProvider)
+                                      .generateCfa(update.caseId);
+                                  await ref
+                                      .read(functionsServiceProvider)
+                                      .generatePdfAndQr(update.caseId);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text('CFA Generated.')),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                child: const Text('Accept'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
@@ -80,10 +136,27 @@ class NotificationsScreen extends ConsumerWidget {
     );
   }
 
-  List<_CaseUpdateItem> _buildUpdates(List<ComplaintCase> cases) {
+  List<_CaseUpdateItem> _buildUpdates(WidgetRef ref, List<ComplaintCase> cases) {
     final items = <_CaseUpdateItem>[];
+    final isStaff =
+        ref.watch(currentUserProvider)?.role == UserRole.barangayStaff;
 
     for (final complaintCase in cases) {
+      // ── Injection: Action Required (Staff only) ─────────────────────────
+      if (isStaff && complaintCase.isCfaApprovalPending) {
+        items.add(
+          _CaseUpdateItem(
+            caseId: complaintCase.id,
+            title: 'Action Required: Generate CFA?',
+            description: 'Case has reached 30 days without resolution.',
+            timestamp: DateTime.now(),
+            icon: Icons.gavel_rounded,
+            color: Colors.redAccent,
+            isAction: true,
+          ),
+        );
+      }
+
       for (final event in complaintCase.events) {
         final tone = _toneFor(event.title);
         items.add(
@@ -160,6 +233,7 @@ class _CaseUpdateItem {
     required this.timestamp,
     required this.icon,
     required this.color,
+    this.isAction = false,
   });
 
   final String caseId;
@@ -168,6 +242,7 @@ class _CaseUpdateItem {
   final DateTime timestamp;
   final IconData icon;
   final Color color;
+  final bool isAction;
 }
 
 class _UpdateTone {

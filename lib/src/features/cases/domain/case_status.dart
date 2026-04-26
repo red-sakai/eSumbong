@@ -4,6 +4,7 @@ enum CaseStatus {
   hearingScheduled,
   failedMediation,
   completed,
+  dismissed,
 }
 
 extension CaseStatusX on CaseStatus {
@@ -19,6 +20,8 @@ extension CaseStatusX on CaseStatus {
         return 'Failed Mediation';
       case CaseStatus.completed:
         return 'Completed';
+      case CaseStatus.dismissed:
+        return 'Dismissed';
     }
   }
 }

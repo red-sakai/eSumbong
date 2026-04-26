@@ -114,7 +114,8 @@ class MockCaseRepository implements CaseRepository {
       }
       final count = item.noShowCount + 1;
       final shouldGenerateCfa = count >= 3;
-      return item.copyWith(
+      
+      var updated = item.copyWith(
         noShowCount: count,
         status: shouldGenerateCfa ? CaseStatus.failedMediation : item.status,
         events: <CaseEvent>[
@@ -126,6 +127,25 @@ class MockCaseRepository implements CaseRepository {
           ),
         ],
       );
+
+      if (shouldGenerateCfa) {
+        final cfaRecord = _buildCfaRecord(updated);
+        updated = updated.copyWith(
+          cfaGenerated: true,
+          cfaRecord: cfaRecord,
+          status: CaseStatus.completed,
+          events: <CaseEvent>[
+            ...updated.events,
+            CaseEvent(
+              title: 'Certificate to File Action Generated',
+              description:
+                  'Auto-generated due to 3 no-shows. Certificate ${cfaRecord.certificateNumber} issued.',
+              timestamp: DateTime.now(),
+            ),
+          ],
+        );
+      }
+      return updated;
     }).toList();
     _emit();
   }
@@ -133,7 +153,7 @@ class MockCaseRepository implements CaseRepository {
   @override
   Future<void> generateCfa(String caseId) async {
     _cases = _cases.map((item) {
-      if (item.id != caseId) {
+      if (item.id != caseId || item.cfaGenerated) {
         return item;
       }
       final cfaRecord = _buildCfaRecord(item);
@@ -148,6 +168,49 @@ class MockCaseRepository implements CaseRepository {
             title: 'Certificate to File Action Generated',
             description:
                 'Certificate ${cfaRecord.certificateNumber} issued and signed by ${cfaRecord.signatoryName}.',
+            timestamp: DateTime.now(),
+          ),
+        ],
+      );
+    }).toList();
+    _emit();
+  }
+
+  @override
+  Future<void> dismissCase(String caseId) async {
+    _cases = _cases.map((item) {
+      if (item.id != caseId) {
+        return item;
+      }
+      return item.copyWith(
+        status: CaseStatus.dismissed,
+        events: <CaseEvent>[
+          ...item.events,
+          CaseEvent(
+            title: 'Case Dismissed',
+            description: 'This case has been dismissed by the Barangay Staff.',
+            timestamp: DateTime.now(),
+          ),
+        ],
+      );
+    }).toList();
+    _emit();
+  }
+
+  @override
+  Future<void> declineCfa(String caseId) async {
+    _cases = _cases.map((item) {
+      if (item.id != caseId) {
+        return item;
+      }
+      return item.copyWith(
+        cfaDeclined: true,
+        events: <CaseEvent>[
+          ...item.events,
+          CaseEvent(
+            title: 'CFA Generation Declined',
+            description:
+                'The Barangay Staff declined to generate a CFA after the 30-day period.',
             timestamp: DateTime.now(),
           ),
         ],

@@ -30,6 +30,28 @@ class CaseDetailsScreen extends ConsumerWidget {
             return const Center(child: Text('Case not found.'));
           }
 
+          // ── Automation trigger (3 No-Shows only) ───────────────────────────
+          if (isStaff && caseData.shouldAutoGenerateCfa) {
+            WidgetsBinding.instance.addPostFrameCallback((_) async {
+              if (!context.mounted) return;
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Auto-generating CFA (3 No-Shows)...'),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+              
+              await ref
+                  .read(caseRepositoryProvider)
+                  .generateCfa(caseData.id);
+              
+              await ref
+                  .read(functionsServiceProvider)
+                  .generatePdfAndQr(caseData.id);
+            });
+          }
+
           return ListView(
             padding: const EdgeInsets.all(16),
             children: <Widget>[
@@ -163,6 +185,47 @@ class CaseDetailsScreen extends ConsumerWidget {
                             context.push('/cfa/${caseData.id}'),
                         label: const Text('View CFA'),
                       ),
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.cancel_outlined),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                      ),
+                      onPressed: () async {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Dismiss Case?'),
+                            content: const Text(
+                                'Are you sure you want to dismiss this complaint? This action cannot be undone.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text('Cancel'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text('Dismiss',
+                                    style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (confirmed == true) {
+                          await ref
+                              .read(caseRepositoryProvider)
+                              .dismissCase(caseData.id);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Case has been dismissed.')),
+                            );
+                          }
+                        }
+                      },
+                      label: const Text('Dismiss Case'),
+                    ),
                   ],
                 )
               // Citizens can only view the CFA if one has been generated

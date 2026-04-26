@@ -69,11 +69,39 @@ class FirestoreCaseRepository implements CaseRepository {
       description: 'Respondent no-show count updated to $count.',
       timestamp: DateTime.now(),
     );
-    await _col.doc(caseId).update(<String, dynamic>{
-      'noShowCount': count,
-      if (shouldFail) 'status': CaseStatus.failedMediation.name,
-      'events': FieldValue.arrayUnion(<Map<String, dynamic>>[event.toJson()]),
-    });
+
+    if (shouldFail) {
+      // Re-fetch or reconstruct the case to use generateCfa
+      final complaintCase = ComplaintCase.fromJson(doc.id, data).copyWith(
+        noShowCount: count,
+        events: <CaseEvent>[
+          ...ComplaintCase.fromJson(doc.id, data).events,
+          event,
+        ],
+      );
+      final cfaRecord = _buildCfaRecord(complaintCase);
+      final cfaEvent = CaseEvent(
+        title: 'Certificate to File Action Generated',
+        description:
+            'Auto-generated due to 3 no-shows. Certificate ${cfaRecord.certificateNumber} issued.',
+        timestamp: DateTime.now(),
+      );
+      await _col.doc(caseId).update(<String, dynamic>{
+        'noShowCount': count,
+        'cfaGenerated': true,
+        'cfaRecord': cfaRecord.toJson(),
+        'status': CaseStatus.completed.name,
+        'events': FieldValue.arrayUnion(<Map<String, dynamic>>[
+          event.toJson(),
+          cfaEvent.toJson(),
+        ]),
+      });
+    } else {
+      await _col.doc(caseId).update(<String, dynamic>{
+        'noShowCount': count,
+        'events': FieldValue.arrayUnion(<Map<String, dynamic>>[event.toJson()]),
+      });
+    }
   }
 
   @override
@@ -81,6 +109,7 @@ class FirestoreCaseRepository implements CaseRepository {
     final doc = await _col.doc(caseId).get();
     if (!doc.exists) return;
     final complaintCase = ComplaintCase.fromJson(doc.id, doc.data()!);
+    if (complaintCase.cfaGenerated) return;
     final cfaRecord = _buildCfaRecord(complaintCase);
     final event = CaseEvent(
       title: 'Certificate to File Action Generated',
@@ -92,6 +121,33 @@ class FirestoreCaseRepository implements CaseRepository {
       'cfaGenerated': true,
       'cfaRecord': cfaRecord.toJson(),
       'status': CaseStatus.completed.name,
+      'events': FieldValue.arrayUnion(<Map<String, dynamic>>[event.toJson()]),
+    });
+  }
+
+  @override
+  Future<void> dismissCase(String caseId) async {
+    final event = CaseEvent(
+      title: 'Case Dismissed',
+      description: 'This case has been dismissed by the Barangay Staff.',
+      timestamp: DateTime.now(),
+    );
+    await _col.doc(caseId).update(<String, dynamic>{
+      'status': CaseStatus.dismissed.name,
+      'events': FieldValue.arrayUnion(<Map<String, dynamic>>[event.toJson()]),
+    });
+  }
+
+  @override
+  Future<void> declineCfa(String caseId) async {
+    final event = CaseEvent(
+      title: 'CFA Generation Declined',
+      description:
+          'The Barangay Staff declined to generate a CFA after the 30-day period.',
+      timestamp: DateTime.now(),
+    );
+    await _col.doc(caseId).update(<String, dynamic>{
+      'cfaDeclined': true,
       'events': FieldValue.arrayUnion(<Map<String, dynamic>>[event.toJson()]),
     });
   }

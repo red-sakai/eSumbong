@@ -15,6 +15,7 @@ class StatusChip extends StatelessWidget {
       CaseStatus.hearingScheduled => Colors.blue,
       CaseStatus.failedMediation => Colors.red,
       CaseStatus.completed => Colors.green,
+      CaseStatus.dismissed => Colors.grey,
     };
 
     return Chip(
