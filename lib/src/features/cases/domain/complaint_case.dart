@@ -6,13 +6,14 @@ class ComplaintCase {
   const ComplaintCase({
     required this.id,
     required this.createdByUserId,
+    this.createdByPhone = '',
     required this.complainantName,
     required this.respondentName,
+    this.respondentPhone = '',
     required this.description,
     required this.incidentDate,
     required this.status,
     required this.events,
-    this.createdByPhone = '',
     this.evidenceUrls = const <String>[],
     this.noShowCount = 0,
     this.cfaGenerated = false,
@@ -27,6 +28,8 @@ class ComplaintCase {
   final String createdByPhone;
   final String complainantName;
   final String respondentName;
+  /// E.164-formatted respondent phone used by the UniSMS demo flow.
+  final String respondentPhone;
   final String description;
   final DateTime incidentDate;
   final CaseStatus status;
@@ -118,6 +121,7 @@ class ComplaintCase {
     String? createdByPhone,
     String? complainantName,
     String? respondentName,
+    String? respondentPhone,
     String? description,
     DateTime? incidentDate,
     CaseStatus? status,
@@ -134,6 +138,7 @@ class ComplaintCase {
       createdByPhone: createdByPhone ?? this.createdByPhone,
       complainantName: complainantName ?? this.complainantName,
       respondentName: respondentName ?? this.respondentName,
+      respondentPhone: respondentPhone ?? this.respondentPhone,
       description: description ?? this.description,
       incidentDate: incidentDate ?? this.incidentDate,
       status: status ?? this.status,

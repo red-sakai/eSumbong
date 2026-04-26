@@ -14,8 +14,10 @@ class MockCaseRepository implements CaseRepository {
       ComplaintCase(
         id: 'KP-2026-0001',
         createdByUserId: 'seed-user-ana',
+        createdByPhone: '+639111111111',
         complainantName: 'Ana Santos',
         respondentName: 'Pedro Reyes',
+        respondentPhone: '+639171234567',
         description: 'Noise complaint and recurring disturbance at night.',
         incidentDate: DateTime.now().subtract(const Duration(days: 9)),
         status: CaseStatus.summonsSent,
@@ -36,8 +38,10 @@ class MockCaseRepository implements CaseRepository {
       ComplaintCase(
         id: 'KP-2026-0002',
         createdByUserId: 'seed-user-maria',
+        createdByPhone: '+639222222222',
         complainantName: 'Maria Lopez',
         respondentName: 'Jose Garcia',
+        respondentPhone: '+639181234567',
         description: 'Boundary dispute requiring mediation hearing.',
         incidentDate: DateTime.now().subtract(const Duration(days: 15)),
         status: CaseStatus.hearingScheduled,

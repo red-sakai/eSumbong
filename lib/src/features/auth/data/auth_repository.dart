@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../cases/domain/user_role.dart';
 import '../domain/app_user.dart';
+import 'package:esumbong/src/shared/utils/input_sanitizer.dart';
 
 /// Thin wrapper around FirebaseAuth + the `users` Firestore collection.
 /// Phone OTP is **mocked**: accepts any 6-digit code and signs in anonymously.
@@ -62,7 +63,8 @@ class AuthRepository {
       throw Exception('Enter the 6-digit OTP sent to your phone.');
     }
     final cred = await _auth.signInAnonymously();
-    final name = fullName.trim().isEmpty ? 'Citizen' : fullName.trim();
+    final sanitizedName = InputSanitizer.titleCase(fullName);
+    final name = sanitizedName.isEmpty ? 'Citizen' : sanitizedName;
     await cred.user?.updateDisplayName(name);
     await _users.doc(cred.user!.uid).set(<String, dynamic>{
       'fullName': name,
@@ -88,18 +90,19 @@ class AuthRepository {
       if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
         cred = await _auth.createUserWithEmailAndPassword(
             email: email, password: password);
-        final name = fullName.trim().isEmpty
+        final sanitizedName = InputSanitizer.titleCase(fullName);
+        final name = sanitizedName.isEmpty
             ? email.split('@').first
-            : fullName.trim();
+            : sanitizedName;
         await cred.user?.updateDisplayName(name);
       } else {
         rethrow;
       }
     }
     await _users.doc(cred.user!.uid).set(<String, dynamic>{
-      'fullName': fullName.trim().isEmpty
+      'fullName': InputSanitizer.titleCase(fullName).isEmpty
           ? cred.user!.displayName ?? email.split('@').first
-          : fullName.trim(),
+          : InputSanitizer.titleCase(fullName),
       'phoneOrEmail': email.trim(),
       'role': role.name,
     }, SetOptions(merge: true));

@@ -19,15 +19,20 @@ class _HearingScheduleScreenState extends ConsumerState<HearingScheduleScreen> {
   DateTime _selectedDateTime = DateTime.now().add(const Duration(days: 2));
 
   Future<void> _save() async {
+    final caseData = await ref.read(caseRepositoryProvider).getCaseById(widget.caseId);
+    final respondentPhone = caseData?.respondentPhone.isNotEmpty == true
+        ? caseData!.respondentPhone
+        : '+639171234567';
+
     await ref.read(caseRepositoryProvider).scheduleHearing(
           caseId: widget.caseId,
           hearingDate: _selectedDateTime,
         );
 
-    // Trigger summons notification (mock — no real SMS sent)
+    // Trigger a realistic UniSMS summons message in the demo activity log.
     await ref.read(functionsServiceProvider).sendSummons(
       caseId: widget.caseId,
-      respondentPhone: '09000000000', // TODO: pull from case/respondent record
+      respondentPhone: respondentPhone,
       hearingDate: _selectedDateTime,
     );
 

@@ -1,33 +1,36 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
-/// [MOCK] Cloud Functions service.
-///
-/// Both SMS summons and PDF/QR generation are simulated locally.
-/// No Firebase Cloud Functions are called.
-///
-/// Replace each method body with a real `FirebaseFunctions.httpsCallable(...)`
-/// call when you deploy the Cloud Functions and upgrade to a Blaze plan.
+import '../../shared/data/services/unisms/unisms_service.dart';
+
 class FunctionsService {
-  /// [MOCK] Simulates sending an SMS summons to the respondent.
-  Future<void> sendSummons({
+  FunctionsService(this._uniSmsService);
+
+  final UniSmsService _uniSmsService;
+
+  /// Sends a realistic UniSMS summons message into the demo activity log.
+  Future<UniSmsMessage> sendSummons({
     required String caseId,
     required String respondentPhone,
     required DateTime hearingDate,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    final formattedDate = DateFormat.yMMMd().add_jm().format(hearingDate);
+    final content =
+        'eSumbong notice: Case $caseId hearing is on $formattedDate. Please attend.';
     debugPrint(
-      '[FunctionsService] [MOCK] sendSummons → '
-      'caseId=$caseId, phone=$respondentPhone, hearing=$hearingDate',
+      '[FunctionsService] sendSummons → caseId=$caseId recipient=$respondentPhone',
     );
-    // TODO(deploy): replace with real callable when Cloud Function is deployed:
-    // await FirebaseFunctions.instance
-    //     .httpsCallable('sendSummonsNotification')
-    //     .call(<String, dynamic>{
-    //       'caseId': caseId,
-    //       'respondentPhone': respondentPhone,
-    //       'hearingDate': hearingDate.toIso8601String(),
-    //     });
+    return _uniSmsService.sendSms(
+      recipient: respondentPhone,
+      content: content,
+      senderId: 'eSumbong',
+      metadata: <String, dynamic>{
+        'case_id': caseId,
+        'hearing_date': hearingDate.toIso8601String(),
+        'template': 'summons_notice',
+      },
+    );
   }
 
   /// [MOCK] Simulates triggering PDF and QR code generation for a CFA.
@@ -39,15 +42,10 @@ class FunctionsService {
     debugPrint(
       '[FunctionsService] [MOCK] generatePdfAndQr → caseId=$caseId, url=$fakePdfUrl',
     );
-    // TODO(deploy): replace with real callable when Cloud Function is deployed:
-    // final result = await FirebaseFunctions.instance
-    //     .httpsCallable('generateCfaPdf')
-    //     .call<Map<String, dynamic>>(<String, dynamic>{'caseId': caseId});
-    // return result.data['pdfUrl'] as String?;
     return fakePdfUrl;
   }
 }
 
 final functionsServiceProvider = Provider<FunctionsService>(
-  (_) => FunctionsService(),
+  (ref) => FunctionsService(ref.read(uniSmsServiceProvider)),
 );

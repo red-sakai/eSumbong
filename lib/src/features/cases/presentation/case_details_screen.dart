@@ -82,6 +82,9 @@ class CaseDetailsScreen extends ConsumerWidget {
                       icon: Icons.person_outline,
                       role: 'Respondent',
                       name: caseData.respondentName,
+                      secondary: caseData.respondentPhone.isNotEmpty
+                          ? caseData.respondentPhone
+                          : null,
                     ),
                     const SizedBox(height: 8),
                     Text(caseData.description),
@@ -256,11 +259,13 @@ class _PartyRow extends StatelessWidget {
     required this.icon,
     required this.role,
     required this.name,
+    this.secondary,
   });
 
   final IconData icon;
   final String role;
   final String name;
+  final String? secondary;
 
   @override
   Widget build(BuildContext context) {
@@ -288,6 +293,13 @@ class _PartyRow extends StatelessWidget {
               style: theme.textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w500),
             ),
+            if (secondary != null) ...<Widget>[
+              const SizedBox(height: 2),
+              Text(
+                secondary!,
+                style: theme.textTheme.bodySmall,
+              ),
+            ],
           ],
         ),
       ],

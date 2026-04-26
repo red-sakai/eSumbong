@@ -9,6 +9,7 @@ import '../../cases/domain/user_role.dart';
 import '../../chatbot/presentation/ezu_chatbot_screen.dart';
 import '../../notifications/presentation/notifications_screen.dart';
 import '../../profile/presentation/profile_screen.dart';
+import '../../shared/data/services/unisms/unisms_service.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/status_chip.dart';
 
@@ -130,6 +131,7 @@ class _StaffHomeTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final casesAsync = ref.watch(casesStreamProvider);
+    final smsActivity = ref.watch(uniSmsDeliveryProvider);
     final theme = Theme.of(context);
 
     return casesAsync.when(
@@ -213,6 +215,48 @@ class _StaffHomeTab extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
+            if (smsActivity.isNotEmpty) ...<Widget>[
+              AppCard(
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F766E).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.sms_rounded,
+                        color: Color(0xFF0F766E),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'UniSMS Live Demo',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${smsActivity.first.recipient} • ${smsActivity.first.status.name} • ${smsActivity.first.content}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
             Text('All Cases', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             ...cases.map(
@@ -254,6 +298,7 @@ class _CitizenHomeTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final casesAsync = ref.watch(visibleCasesStreamProvider);
+    final smsActivity = ref.watch(uniSmsDeliveryProvider);
     final theme = Theme.of(context);
 
     return casesAsync.when(
@@ -327,6 +372,48 @@ class _CitizenHomeTab extends ConsumerWidget {
                 ],
               ),
             ),
+            if (smsActivity.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 20),
+              AppCard(
+                child: Row(
+                  children: <Widget>[
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F766E).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.sms_rounded,
+                        color: Color(0xFF0F766E),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'UniSMS Live Demo',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${smsActivity.first.recipient} • ${smsActivity.first.status.name} • ${smsActivity.first.content}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
 
             if (cases.isEmpty) ...<Widget>[

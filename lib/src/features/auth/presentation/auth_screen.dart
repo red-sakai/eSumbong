@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../cases/domain/user_role.dart';
 import 'auth_controller.dart';
+import 'package:esumbong/src/shared/utils/input_sanitizer.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -19,7 +20,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   final _otpCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
-  final _fullNameCtrl = TextEditingController();
+  final _firstNameCtrl = TextEditingController();
+  final _middleNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
 
   bool _usePhoneOtp = true;
   bool _otpSent = false;
@@ -32,8 +35,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     _otpCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
-    _fullNameCtrl.dispose();
+    _firstNameCtrl.dispose();
+    _middleNameCtrl.dispose();
+    _lastNameCtrl.dispose();
     super.dispose();
+  }
+
+  String _fullName() {
+    return InputSanitizer.composeFullName(
+      firstName: _firstNameCtrl.text,
+      middleName: _middleNameCtrl.text,
+      lastName: _lastNameCtrl.text,
+    );
   }
 
   // ── Phone OTP helpers ───────────────────────────────────────────────────
@@ -55,7 +68,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   Future<void> _verifyOtp() async {
-    final name = _fullNameCtrl.text.trim();
+    final name = _fullName();
     if (name.isEmpty) { _snack('Enter your full name.'); return; }
     await ref.read(authControllerProvider.notifier).verifyMockOtp(
           phone: _phoneCtrl.text.trim(),
@@ -77,7 +90,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Future<void> _signInWithEmail() async {
     final email = _emailCtrl.text.trim();
     final pass = _passwordCtrl.text;
-    final name = _fullNameCtrl.text.trim();
+    final name = _fullName();
     if (email.isEmpty || pass.isEmpty) {
       _snack('Enter email and password.');
       return;
@@ -224,15 +237,64 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             const SizedBox(height: 16),
 
                             // ── Full name ─────────────────────────────────
-                            TextField(
-                              controller: _fullNameCtrl,
-                              textCapitalization: TextCapitalization.words,
-                              decoration: const InputDecoration(
-                                labelText: 'Full Name',
-                                hintText: 'e.g. Juan Dela Cruz',
-                                prefixIcon:
-                                    Icon(Icons.person_outline_rounded),
-                              ),
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  flex: 3,
+                                  child: TextField(
+                                    controller: _firstNameCtrl,
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    inputFormatters: <TextInputFormatter>[
+                                      FilteringTextInputFormatter.allow(
+                                        RegExp(r"[A-Za-zÀ-ÿ\s'\-.]"),
+                                      ),
+                                    ],
+                                    decoration: const InputDecoration(
+                                      labelText: 'First Name',
+                                      hintText: 'e.g. Juan',
+                                      prefixIcon:
+                                          Icon(Icons.person_outline_rounded),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  flex: 3,
+                                  child: TextField(
+                                    controller: _middleNameCtrl,
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    inputFormatters: <TextInputFormatter>[
+                                      FilteringTextInputFormatter.allow(
+                                        RegExp(r"[A-Za-zÀ-ÿ\s'\-.]"),
+                                      ),
+                                    ],
+                                    decoration: const InputDecoration(
+                                      labelText: 'Middle Name',
+                                      hintText: 'Optional',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  flex: 4,
+                                  child: TextField(
+                                    controller: _lastNameCtrl,
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                    inputFormatters: <TextInputFormatter>[
+                                      FilteringTextInputFormatter.allow(
+                                        RegExp(r"[A-Za-zÀ-ÿ\s'\-.]"),
+                                      ),
+                                    ],
+                                    decoration: const InputDecoration(
+                                      labelText: 'Last Name',
+                                      hintText: 'e.g. Dela Cruz',
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 12),
 
